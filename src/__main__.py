@@ -26,7 +26,7 @@ def main():
     now = datetime.datetime.now()
     os.makedirs(f"./img/input/archive/{now:%Y%m%d_%H%M%S}", exist_ok=True)
     os.makedirs("./output/", exist_ok=True)
-    df.to_csv("./output/results_{now:%Y%m%d_%H%M%s}.tsv", sep="\t", index=False)
+    df.to_csv(f"./output/results_{now:%Y%m%d_%H%M%S}.tsv", sep="\t", index=False)
 
 
 if __name__ == "__main__":

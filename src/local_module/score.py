@@ -6,7 +6,7 @@ import pyocr.builders
 import pytesseract
 from PIL import Image, ImageEnhance, ImageOps, ImageFilter
 
-from .util import add_path, select_file
+from .util import add_path
 
 add_path(r"C:\Program Files (x86)\Tesseract-OCR")
 add_path(r"C:\Program Files\Tesseract-OCR")
@@ -75,7 +75,6 @@ class SCORE:
         img = self.img_box
         img = self._remove_bight(img, c_min=230)
         self.img_box = ImageOps.invert(img.convert(mode="L"))
-        self.img_box.save("title.png")
         res: str = self._exec_ocr(lang="jpn")
         try:
             title_match: str = re.search(r"(?<=「)[^」]+(?=」.+)", res)\
@@ -126,20 +125,6 @@ class SCORE:
         img = self._remove_bight(ci_img)
         return self._get_gray_img(img, c_min=c_min)
 
-    """
-    def _get_fcap(self, img):
-        HEIGHT: int = 38
-        WIDTH: int = 288
-        class_num: int = 12
-        model = models.model_vgg(class_num, HEIGHT, WIDTH)
-        model.load_weights("./weights12_15.h5")
-        img = img.resize((WIDTH, HEIGHT))
-        x_test = [np.array(img)]
-        x_test = np.asarray(x_test) / 255
-        yp = model.predict(x_test)
-        print(yp)
-    """
-
     def get_accuracy(self, position, offset, accuracy_num, location_number=None):
         accuracy_position = tuple([
             pos + offset * accuracy_num if n % 2 else pos
@@ -147,8 +132,6 @@ class SCORE:
         ])
         accuracy_img = self._crop_img_box(accuracy_position)
         ret = self._exec_ocr_dig(accuracy_img).strip()
-        print(ret)
-        accuracy_img.save(f"./img/accuracy_{location_number}_{462 + offset * accuracy_num}.png")
         return ret
 
     def _personal_score(self, location_number: int):
@@ -167,7 +150,6 @@ class SCORE:
         # Name
         name_position : tuple = person_dict["name_position"]
         name_img = self._get_name_img(name_position)
-        # name_img.save(f"./img/name{location_number}.png")
         name: str = self._exec_ocr_img(name_img, lang="jpn")
         res_dict["name"] = name
 
@@ -178,24 +160,19 @@ class SCORE:
         res_dict["difficulty"] = difficulty
 
         # combo
-        """
         combo_position : tuple = person_dict["combo_position"]
         cmb_img = self._crop_img_box(combo_position)
         cmb_img = self._remove_color(cmb_img, c_min=240)
         cmb_img = self._remove_bight(cmb_img, c_min=254)
-        cmb_img.save(f"./img/cmb_{location_number}.png")
         combo: str = self._exec_ocr_dig(cmb_img)
         res_dict["combo"] = combo
-        print(location_number, combo, type(combo))
-        """
-
         # accuracy
         accuracy_position : tuple = person_dict["accuracy_position"]
         accuracy_offset: int = person_dict["accuracy_offset"]
         for n, accuracy in enumerate(["perfect", "great", "good", "bad", "miss"]):
             accuracy_num = self.get_accuracy(accuracy_position, accuracy_offset, n, location_number)
             res_dict[accuracy] = accuracy_num
-        print(res_dict)
+        return res_dict
 
     def get_score(self, location_number: int):
         res_dict: dict = {}
@@ -207,12 +184,10 @@ class SCORE:
             for n, num in enumerate(base_position, 1)
         ])
         self._crop(position)
-        self.img_box.save(f"./img/per_{location_number}.png")
 
         # difficulty
         difficulty_position : tuple = person_dict["difficulty_position"]
         dif_img = self._get_name_img(difficulty_position)
-        # dif_img.save(f"./img/dif_{location_number}.png")
         difficulty: str = self._exec_ocr_img(dif_img, lang="eng")
         res_dict[f"difficulty_{location_number}"] = difficulty
 
@@ -222,41 +197,6 @@ class SCORE:
         score_img = self._crop_img_box(score_position).convert(mode="L")
         ci = ImageEnhance.Contrast(score_img)
         score_img = ci.enhance(5.0)
-        # score: str = self._exec_ocr_dig(score_img)
         score: str = self._exec_ocr_img(score_img)
         res_dict[f"score_{location_number}"] = score
         return res_dict
-
-    """
-    def get_fcap(self, location_number):
-        res_dict: dict = {
-            "location_number": location_number,
-        }
-        person_dict: dict = self.position_dict["personal_score"]
-        offset = person_dict["offset"] * (location_number - 1)
-        base_position: tuple = person_dict["position"]
-        position = tuple([
-            num + offset if n % 2 == 1 else num
-            for n, num in enumerate(base_position, 1)
-        ])
-        self._crop(position)
-
-        # fcap
-        fcap_position : tuple = person_dict["fcap_position"]
-        fcap_img = self._get_name_img(fcap_position, c_min=120)
-        self._get_fcap(fcap_img)
-
-    def __get_fcap(self, file_name: str, location_number: int):
-        person_dict: dict = self.position_dict["personal_score"]
-        offset = person_dict["offset"] * (location_number - 1)
-        base_position: tuple = person_dict["position"]
-        position = tuple([
-            num + offset if n % 2 == 1 else num
-            for n, num in enumerate(base_position, 1)
-        ])
-        self._crop(position)
-        # fcap
-        fcap_position : tuple = person_dict["fcap_position"]
-        fcap_img = self._crop_img_box(fcap_position)
-        fcap_img.save(f"./img/train/fcap_train/{file_name}_{location_number}.png")
-    """
