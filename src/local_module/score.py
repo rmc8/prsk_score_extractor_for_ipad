@@ -39,11 +39,6 @@ class SCORE:
         self.position_dict: dict = position_dict[model]
         self.img_box: Optional[Any] = None
         self.builder = builder
-        self.fist: Optional[str] = None
-        self.second: Optional[str] = None
-        self. third: Optional[str] = None
-        self.forth: Optional[str] = None
-        self.fifth: Optional[str] = None
 
     def _crop(self, position: tuple):
         self.img_box = self.img_obj.crop(position)
